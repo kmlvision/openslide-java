@@ -13,11 +13,19 @@ Build requirements
 Building on Linux or Mac OS X
 -----------------------------
 
+Requirements:
+1. autoconf
+2. autoconf-archive
+3. automake
+
 ```
+autoreconf -i
 ./configure
 make
 make install
 ```
+
+Find `openslide.jar` in the root directory.
 
 Cross-compiling for Windows with MinGW-w64
 ------------------------------------------
