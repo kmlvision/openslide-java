@@ -1,0 +1,45 @@
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.openslide</groupId>
+    <artifactId>openslide</artifactId>
+    <version>0.12.2</version>
+
+    <name>OpenSlide-Java</name>
+    <packaging>jar</packaging>
+
+    <description>Java bindings for reading whole slide image data with OpenSlide.</description>
+    <url>http://openslide.org</url>
+    <licenses>
+        <license>
+            <name>LGPL</name>
+            <url>https://raw.githubusercontent.com/openslide/openslide/master/lgpl-2.1.txt</url>
+        </license>
+    </licenses>
+    <scm>
+        <connection>https://github.com/kmlvision/openslide-java.git</connection>
+    </scm>
+    <!-- Declare runtime dependencies to the native libraries -->
+    <dependencies>
+        <dependency>
+            <groupId>org.openslide</groupId>
+            <artifactId>openslide-natives</artifactId>
+            <version>3.4.1</version>
+            <classifier>linux</classifier>
+            <scope>runtime</scope>
+        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.openslide</groupId>-->
+            <!--<artifactId>openslide-natives</artifactId>-->
+            <!--<version>3.4.1</version>-->
+            <!--<classifier>windows</classifier>-->
+            <!--<scope>runtime</scope>-->
+        <!--</dependency>-->
+        <dependency>
+            <groupId>org.openslide</groupId>
+            <artifactId>openslide-natives</artifactId>
+            <version>3.4.1</version>
+            <classifier>osx</classifier>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+</project>

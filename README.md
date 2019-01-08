@@ -8,7 +8,7 @@ Build requirements
 
 - JDK
 - Apache Ant
-- OpenSlide >= 3.4.0
+- [OpenSlide >= 3.4.0](https://github.com/kmlvision/openslide)
 
 Building on Linux or Mac OS X
 -----------------------------
@@ -18,58 +18,98 @@ Install
 2. `autoconf-archive`
 3. `automake`
 
-```
-# set JAVA_HOME and JDK_HOME to the respective paths
+> Optional: set the `<property name="target" value="11"/>` value in `build.xml` to the Java compile target version. 
 
-autoreconf -i
-./configure
-make
-make install
+```
+# set JAVA_HOME and JDK_HOME to the respective paths, then run
+autoreconf -i && ./configure && make && make install
 ```
 
-Building in Docker
-------------------
+This will install the `openslide.jar` and `libopenslide-jni.{ dylib | so }` to `/usr/local/lib/openslide-java/`,
+
+> **Caution**: this build contains a hard-coded path to the OpenSlide library! 
+> The bindings expect the OpenSlide lib to be installed on the target system.
+
+
+Building OSX native lib
+-----------------------
+**NB**: Following the invaluable addition to packaging OpenSlide Java by [quath](https://github.com/qupath/qupath/blob/master/maven/Notes%20on%20packaging%20OpenSlide.md).
+
+Build the library
+
+```bash
+# install python 3 and macpack
+brew install python3
+pip3 install macpack
+
+# create build dirs
+mkdir -p packaging/osx-java-default/libs
+cd packaging/osx-java-default
+cp /usr/local/lib/openslide-java/openslide.jar ./openslide-java-default.jar
+cp /usr/local/lib/openslide-java/libopenslide-jni.jnilib ./libs
+
+macpack ./libs/libopenslide-jni.jnilib -d .
+zip -d ./openslide-java-default.jar resources/openslide.properties
+jar cf ./openslide-natives-osx.jar -C ./libs .
+```
+
+TODO: we need to load the openslide-jni from the jar when using from maven repository.
+
+### Deploying bindings and natives to a Maven repository
+Prerequisites:
+1. `mvn` command installed
+2. Access to `$MAVEN_REPO_URL` and the `$MVN_REPO_ID` is configured in your local `.m2/settings.xml`
+3. Deploy using the helper script in the `build-compat` folder
+
+```bash
+cd build-compat
+sh ./mvn-deploy-file.sh default osx MVN_REPO_ID MVN_REPO_ID
+```
+
+
+Building portable Java 8/11 in Docker (for Linux)
+-------------------------------------------------
+
+**NB**: Following the invaluable addition to packaging OpenSlide Java by [quath](https://github.com/qupath/qupath/blob/master/maven/Notes%20on%20packaging%20OpenSlide.md).
 
 Build the latest version against the default Java 1.6 target with the latest OpenSlide binaries:
 ```bash
-docker build -t local/openslide-java:6-git .
+docker build -t local/openslide-java:6-git --build-arg ENV_JAVA_COMPILE_TARGET=6 -f build-compat/Dockerfile .
 ```
+You need to explicitly enable the patching / dependency bundling step using `--build-arg BUNDLE=1` to build the dependencies as JAR and patch the openslide.jar file.
 
-Retrieve the built jar file into the current directory:
 ```bash
-docker run --rm -v $PWD:/artifacts local/openslide-java:6-git /bin/bash -c "cp /opt/openslide-java/openslide*.jar /artifacts/"
+docker run --rm -v $PWD/packaging/linux-java-6:/exchange local/openslide-java:6-git /bin/bash -c "cp /artifacts/openslide*.jar /exchange"
 ```
 
 
 Compatibility builds for Java 8 and Java 11 are located in `/build-compat/java-*`:
 ```bash
-docker build -t local/openslide-java:8-git -f build-compat/java-8/Dockerfile .
+docker build -t local/openslide-java:8-git --build-arg ENV_JAVA_COMPILE_TARGET=8 -f build-compat/Dockerfile .
 # then
-docker run --rm -v $PWD:/artifacts local/openslide-java:8-git /bin/bash -c "cp /opt/openslide-java/openslide*.jar /artifacts/"
+docker run --rm -v $PWD/packaging/linux-java-8:/exchange local/openslide-java:8-git /bin/bash -c "cp /artifacts/openslide*.jar /exchange"
 ```
 
 ```bash
-docker build -t local/openslide-java:11-git -f build-compat/java-11/Dockerfile .
+docker build -t local/openslide-java:11-git --build-arg ENV_JAVA_COMPILE_TARGET=11 -f build-compat/Dockerfile .
 # then
-docker run --rm -v $PWD:/artifacts local/openslide-java:11-git /bin/bash -c "cp /opt/openslide-java/openslide*.jar /artifacts/"
+docker run --rm -v $PWD/packaging/linux-java-11:/exchange local/openslide-java:11-git /bin/bash -c "cp /artifacts/openslide*.jar /exchange"
 ```
 
-#### Deploying to a Maven repository
+### Deploying dependencies and natives to a Maven repository
 Prerequisites:
 1. `mvn` command installed
-2. Access to `$MAVEN_REPO_URL` is configured in your local `.m2/settings.xml`
+2. Access to `$MAVEN_REPO_URL` and the `$MVN_REPO_ID` is configured in your local `.m2/settings.xml`
+3. Deploy using the helper script in the `build-compat` folder
 
-Set the ENV and deploy:
 ```bash
-mvn deploy:deploy-file -DgroupId=org.openslide \
-  -DartifactId=openslide \
-  -Dversion=${OPENSLIDE_VERSION} \
-  -Dpackaging=pom \
-  -Dfile=${JAR_FILE} \
-  -DrepositoryId=${MVN_REPO_ID} \
-  -Durl=${MVN_REPO_URL}
+cd build-compat
+# USAGE: sh ./mvn-deploy-file.sh JAVA_TARGET OS_TARGET MVN_REPO_ID MVN_REPO_ID
+# e.g.
+sh ./mvn-deploy-file.sh 11 linux MVN_REPO_ID MVN_REPO_ID
 ```
 
+TODO: we need to load the openslide-jni from the jar when using from maven repository.
 
 Cross-compiling for Windows with MinGW-w64
 ------------------------------------------
